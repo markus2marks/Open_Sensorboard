@@ -82,7 +82,7 @@ void MX_USB_DEVICE_Init(void);
  * -- Insert functions declaration here --
  */
 /* USER CODE BEGIN FD */
-
+USBD_HandleTypeDef* MX_USB_DEVICE_Get_Handler(void);
 /* USER CODE END FD */
 /**
   * @}

@@ -39,6 +39,22 @@ C_SOURCES =  \
 Src/sensortask.c \
 Src/driver/ms5803.c \
 Src/driver/mpu9250.c \
+Src/driver/ms4525do.c \
+Src/gyrotask.c \
+Src/stm32f7xx_empl_drv.c \
+Drivers/eMPL/mllite/data_builder.c \
+Drivers/eMPL/mllite/hal_outputs.c \
+Drivers/eMPL/mllite/message_layer.c \
+Drivers/eMPL/mllite/ml_math_func.c \
+Drivers/eMPL/mllite/mlmath.c \
+Drivers/eMPL/mllite/mpl.c \
+Drivers/eMPL/mllite/results_holder.c \
+Drivers/eMPL/mllite/start_manager.c \
+Drivers/eMPL/mllite/storage_manager.c \
+Drivers/eMPL/eMPL-hal/eMPL_outputs.c \
+Drivers/eMPL/driver/eMPL/inv_mpu_dmp_motion_driver.c \
+Drivers/eMPL/driver/eMPL/inv_mpu.c \
+Drivers/eMPL/driver/STM32F7/log_stm32.c \
 Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_eth.c \
 Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_can.c \
 Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_cortex.c \
@@ -287,12 +303,17 @@ AS_DEFS =
 C_DEFS =  \
 -DMBEDTLS_CONFIG_FILE=\"mbedtls_config.h\" \
 -DUSE_HAL_DRIVER \
--DSTM32F745xx
+-DSTM32F745xx \
+-DEMPL \
+-DEMPL_TARGET_STM32F4 \
+-DMPU9250
 -DMBEDTLS_CONFIG_FILE=\"mbedtls_config.h\" \
 -DUSE_HAL_DRIVER \
--DSTM32F745xx
-
-
+-DSTM32F745xx \
+-DEMPL \
+-DUSE_DMP \
+-DMPL_LOG_NDEBUG=1 \
+-DDEBUG=1
 # AS includes
 AS_INCLUDES =  \
 -I\Inc
@@ -322,13 +343,18 @@ C_INCLUDES =  \
 -ISrc/driver \
 -IMiddlewares/ST/STM32_USB_Device_Library/Core/Inc \
 -IMiddlewares/ST/STM32_USB_Device_Library/Class/CDC/Inc \
--IInc
-
-
+-IInc \
+-IDrivers/eMPL \
+-IDrivers/eMPL/driver/eMPL \
+-IDrivers/eMPL/driver/include \
+-IDrivers/eMPL/driver/STM32F7 \
+-IDrivers/eMPL/eMPL-hal \
+-IDrivers/eMPL/mllite \
+-IDrivers/eMPL/mpl \
 # compile gcc flags
 ASFLAGS = $(MCU) $(AS_DEFS) $(AS_INCLUDES) $(OPT) -Wall -fdata-sections -ffunction-sections
 
-CFLAGS = $(MCU) $(C_DEFS) $(C_INCLUDES) $(OPT) -Wall -fdata-sections -ffunction-sections
+CFLAGS = $(MCU) $(C_DEFS) $(C_INCLUDES) $(OPT) -Wall -fdata-sections -ffunction-sections 
 
 ifeq ($(DEBUG), 1)
 CFLAGS += -g -gdwarf-2
@@ -336,7 +362,7 @@ endif
 
 
 # Generate dependency information
-CFLAGS += -MMD -MP -MF"$(@:%.o=%.d)"
+#CFLAGS += -MMD -MP -MF"$(@:%.o=%.d)"
 
 
 #######################################
@@ -347,7 +373,7 @@ LDSCRIPT = STM32F745ZETx_FLASH.ld
 
 # libraries
 LIBS = -lc -lm -lnosys 
-LIBDIR = 
+LIBDIR = C:/Users/marku/OneDrive/Dokumente/ARM/Sensorboard/Sensorboard/Drivers/eMPL/mpl/liblibmplmpu.a
 LDFLAGS = $(MCU) -specs=nano.specs --specs=rdimon.specs -lc -lrdimon -T$(LDSCRIPT) $(LIBDIR) $(LIBS) -Wl,-Map=$(BUILD_DIR)/$(TARGET).map,--cref -Wl,--gc-sections
 
 # default action: build all

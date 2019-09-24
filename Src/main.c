@@ -25,12 +25,14 @@
 #include "mbedtls.h"
 #include <stdio.h>
 #include "sensortask.h"
+#include "gyrotask.h"
 #include "mpu9250.h"
 #include "usb_device.h"
 #include "usbd_core.h"
 #include "usbd_desc.h"
 #include "usbd_cdc.h"
 #include "usbd_cdc_if.h"
+#include "ms4525do.h"
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 
@@ -68,6 +70,9 @@ SDRAM_HandleTypeDef hsdram1;
 osThreadId defaultTaskHandle;
 /* USER CODE BEGIN PV */
 struct mpu9250_dev gyro;
+struct ms5803_dev pressure_sensor1;
+struct ms5803_dev pressure_sensor2;
+struct ms4525do_dev speed_sensor;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -116,7 +121,6 @@ int main(void)
 
   /* Configure the system clock */
   SystemClock_Config();
-
   /* USER CODE BEGIN SysInit */
 
   /* USER CODE END SysInit */
@@ -135,16 +139,35 @@ int main(void)
   MX_SPI5_Init();
   /* USER CODE BEGIN 2 */
 
+  //MPU9250 init
   gyro.gpio_port = GPIOF;
   gyro.pin_cs = GPIO_PIN_6;
   gyro.hspi = &hspi1;
-  MPU9250_drv_init(&gyro);
+  stm32f7xx_empl_drv_init(&gyro);
 
-  ms5803_init(&hspi2, GPIOD, GPIO_PIN_4);
+  //MS5803 Sensor 1 init
+  pressure_sensor1.gpio_port = GPIOD;
+  pressure_sensor1.hspi = &hspi2;
+  pressure_sensor1.pin_cs = GPIO_PIN_4;
+  ms5803_init(&pressure_sensor1);
+
+  //MS5803 Sensor 2 init
+  pressure_sensor2.gpio_port = GPIOF;
+  pressure_sensor2.hspi = &hspi5;
+  pressure_sensor2.pin_cs = GPIO_PIN_10;
+  ms5803_init(&pressure_sensor2);
+
+  //MS4525do Sensor init
+  speed_sensor.gpio_port = GPIOE;
+  speed_sensor.hspi = &hspi4;
+  speed_sensor.pin_cs = GPIO_PIN_3;
+
   /* USER CODE END 2 */
 
   /* USER CODE BEGIN RTOS_MUTEX */
+  gyroTaskInit();
   SensorTaskInit();
+
   /* USER CODE END RTOS_MUTEX */
 
   /* USER CODE BEGIN RTOS_SEMAPHORES */

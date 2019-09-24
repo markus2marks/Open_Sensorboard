@@ -231,8 +231,8 @@ bool MPU9250_drv_init(struct mpu9250_dev *dev);
 bool MPU9250_drv_start_maesure(MPU9250_BIT_GYRO_FS_SEL gyro_fs, MPU9250_BIT_ACCEL_FS_SEL accel_fs, MPU9250_BIT_DLPF_CFG dlpf_cfg, MPU9250_BIT_A_DLPFCFG a_dlpfcfg);
 bool MPU9250_drv_stop_maesure(void);
 bool MPU9250_drv_read_gyro(MPU9250_gyro_val *gyro_val);
-bool MPU9250_drv_read_accel(MPU9250_accel_val *accel_val);
-bool MPU9250_drv_read_temperature(MPU9250_temperature_val *temperature_val);
+bool MPU9250_drv_read_accel(struct mpu9250_dev *dev, MPU9250_accel_val *accel_val);
+bool MPU9250_drv_read_temperature(struct mpu9250_dev *dev, MPU9250_temperature_val *temperature_val);
 bool MPU9250_drv_read_magnetometer(MPU9250_magnetometer_val *magnetometer_val);
 
 #endif

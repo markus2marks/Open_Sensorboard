@@ -28,11 +28,6 @@
 
 #define BSWAP16(v) (v << 8) & 0xFF00 | (v >> 8) & 0xFF
 
-/* spi file descriptor */
-static SPI_HandleTypeDef *ms5803_hspi;
-static GPIO_TypeDef  *ms5803_gpio_port;
-static uint16_t ms5803_pin_cs;
-
 /* MS5803 calibration data */
 static uint16_t calib_coeff[8] = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
 
@@ -44,10 +39,10 @@ static uint16_t calib_coeff[8] = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
  *
  * \param command ADC command.
  */
-static uint32_t read_value(uint8_t command) {
+static uint32_t read_value(struct ms5803_dev *dev, uint8_t command) {
 	uint8_t data[4];
-	ms5803_write_command(0x48);
-	ms5803_read_data(data, 4);
+	ms5803_write_command(dev, 0x48);
+	ms5803_read_data(dev, data, 4);
     return (data[0] << 16) | (data[1] << 8) | data[2];
 }
 
@@ -110,15 +105,12 @@ static void calculate(uint32_t d1, uint32_t d2, int32_t *pressure, int32_t *temp
  * Public API implementation.
  */
 
-int ms5803_init(SPI_HandleTypeDef *hspi, GPIO_TypeDef  *gpio_port, uint16_t pin_cs) {
+int ms5803_init(struct ms5803_dev *dev) {
 
 	static uint8_t data[4];
 	static uint8_t prom = 0;
-	ms5803_hspi = hspi;
-	ms5803_gpio_port = gpio_port;
-	ms5803_pin_cs = pin_cs;
 	//reset sensor
-	ms5803_write_command(0x1E);
+	ms5803_write_command(dev, MS5803_RESET);
     return 0;
 }
 
@@ -127,22 +119,22 @@ int ms5803_init(SPI_HandleTypeDef *hspi, GPIO_TypeDef  *gpio_port, uint16_t pin_
  * Public API implementation.
  */
 
-void ms5803_write_command(uint8_t command)
+void ms5803_write_command(struct ms5803_dev *dev, uint8_t command)
 {
-	HAL_GPIO_WritePin(ms5803_gpio_port, ms5803_pin_cs, GPIO_PIN_RESET);
-	HAL_SPI_Transmit(ms5803_hspi,(uint8_t*) &command, 1, 100);
-	HAL_GPIO_WritePin(ms5803_gpio_port, ms5803_pin_cs, GPIO_PIN_SET);
+	HAL_GPIO_WritePin(dev->gpio_port, dev->pin_cs, GPIO_PIN_RESET);
+	HAL_SPI_Transmit(dev->hspi,(uint8_t*) &command, 1, 100);
+	HAL_GPIO_WritePin(dev->gpio_port, dev->pin_cs, GPIO_PIN_SET);
 }
 
 /*
  * Public API implementation.
  */
 
-void ms5803_read_data(uint8_t *data, uint8_t length)
+void ms5803_read_data(struct ms5803_dev *dev,  uint8_t *data, uint8_t length)
 {
-	HAL_GPIO_WritePin(ms5803_gpio_port, ms5803_pin_cs, GPIO_PIN_RESET);
-	HAL_SPI_Receive(ms5803_hspi,(uint8_t*) data, length, 100);
-	HAL_GPIO_WritePin(ms5803_gpio_port, ms5803_pin_cs, GPIO_PIN_SET);
+	HAL_GPIO_WritePin(dev->gpio_port, dev->pin_cs, GPIO_PIN_RESET);
+	HAL_SPI_Receive(dev->hspi,(uint8_t*) data, length, 100);
+	HAL_GPIO_WritePin(dev->gpio_port, dev->pin_cs, GPIO_PIN_SET);
 }
 
 
@@ -162,7 +154,21 @@ int ms5803_read(int32_t *pressure, int32_t *temperature) {
     return 0;
 }
 
+/*
+ *
+ */
+void ms5803_start_conv_press(struct ms5803_dev *dev)
+{
+	ms5803_write_command(dev, MS5803_D1 + MS5803_OSR_4096);
+}
 
+/*
+ *
+ */
+void ms5803_start_conv_temp(struct ms5803_dev *dev)
+{
+	ms5803_write_command(dev, MS5803_D2 + MS5803_OSR_4096);
+}
 
 /*
  * vim: sw=4:et:ai

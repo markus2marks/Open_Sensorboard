@@ -20,6 +20,35 @@
 #ifndef _MS5803_H_
 #define _MS5803_H_
 
+
+
+// registers of the device
+#define MS5803_D1 0x40
+#define MS5803_D2 0x50
+#define MS5803_RESET 0x1E
+
+// D1 and D2 result size (bytes)
+#define MS5803_D1D2_SIZE 3
+
+// OSR (Over Sampling Ratio) constants
+#define MS5803_OSR_256 0x00
+#define MS5803_OSR_512 0x02
+#define MS5803_OSR_1024 0x04
+#define MS5803_OSR_2048 0x06
+#define MS5803_OSR_4096 0x08
+
+#define MS5803_PROM_BASE_ADDR 0xA2 // by adding ints from 0 to 6 we can read all the prom configuration values.
+// C1 will be at 0xA2 and all the subsequent are multiples of 2
+/*
+ * Device structure
+ */
+struct ms5803_dev
+{
+	SPI_HandleTypeDef *hspi;
+	GPIO_TypeDef  *gpio_port;
+	uint16_t pin_cs;
+};
+
 /*!
  * \brief Initialize MS5803 sensor.
  *
@@ -28,11 +57,15 @@
  * \param f_dev I2C device filename, i.e. /dev/i2c-0.
  * \param address I2C device address, i.e. 0x77.
  */
-int ms5803_init(SPI_HandleTypeDef *hspi, GPIO_TypeDef  *gpio_port, uint16_t pin_cs);
+int ms5803_init(struct ms5803_dev *dev);
 
-void ms5803_write_command(uint8_t command);
+void ms5803_write_command(struct ms5803_dev *dev, uint8_t command);
 
-void ms5803_read_data(uint8_t* data, uint8_t length);
+void ms5803_read_data(struct ms5803_dev *dev,  uint8_t *data, uint8_t length);
+
+void ms5803_start_conv_press(struct ms5803_dev *dev);
+
+void ms5803_start_conv_temp(struct ms5803_dev *dev);
 
 /*!
  * \brief Read pressure and temperature from MS5803 sensor.

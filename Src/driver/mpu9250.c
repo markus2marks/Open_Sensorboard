@@ -43,21 +43,19 @@ static MPU9250_STAT stat = MPU9250_STAT_NONE;
 /*
  * Read byte data from SPI
  */
-static bool mpu9250_drv_read_byte(struct mpu9250_dev *dev, uint8_t addr, uint8_t *val)
+static void mpu9250_drv_read_byte(struct mpu9250_dev *dev, uint8_t addr, uint8_t *val)
 {
-    uint8_t temp = addr;
-    temp |= 0x80;
+    addr |= 0x80;
     HAL_GPIO_WritePin(dev->gpio_port, dev->pin_cs, GPIO_PIN_RESET);
-    HAL_SPI_Transmit(dev->hspi,(uint8_t*) &temp, 1, 100);
+    HAL_SPI_Transmit(dev->hspi,(uint8_t*) &addr, 1, 100);
 	HAL_SPI_Receive(dev->hspi,(uint8_t*) val, 1, 100);
 	HAL_GPIO_WritePin(dev->gpio_port, dev->pin_cs, GPIO_PIN_SET);
-    return true;
 }
 
 /*
  * Write byte data to SPI
  */
-static uint16_t mpu9250_drv_write_byte(struct mpu9250_dev *dev, uint8_t addr, uint8_t val)
+static void mpu9250_drv_write_byte(struct mpu9250_dev *dev, uint8_t addr, uint8_t val)
 {
 	HAL_GPIO_WritePin(dev->gpio_port, dev->pin_cs, GPIO_PIN_RESET);
 	HAL_SPI_Transmit(dev->hspi,(uint8_t*) &addr, 1, 100);
@@ -112,7 +110,7 @@ bool MPU9250_drv_init(struct mpu9250_dev *dev)
         return false;
     }
 
-
+//MPU Config
 	mpu9250_drv_write_byte(dev, MPU9250_REG_PWR_MGMT_1, 0x80);
 	mpu9250_drv_write_byte(dev, MPU9250_REG_PWR_MGMT_1, 0x01);
 	mpu9250_drv_write_byte(dev, MPU9250_REG_PWR_MGMT_2, 0x3f);
@@ -234,7 +232,7 @@ bool MPU9250_drv_read_gyro(MPU9250_gyro_val *gyro_val)
 /*
  * Read Accel.
  */
-bool MPU9250_drv_read_accel(MPU9250_accel_val *accel_val)
+bool MPU9250_drv_read_accel(struct mpu9250_dev *dev, MPU9250_accel_val *accel_val)
 {
     uint8_t vals[6];
 
@@ -247,7 +245,7 @@ bool MPU9250_drv_read_accel(MPU9250_accel_val *accel_val)
     }
 
     for (int i = 0; i < 6; i++) {
-        //mpu9250_drv_read_byte(MPU9250_REG_ACCEL_XOUT_HL + i, &vals[i]);
+        mpu9250_drv_read_byte(dev, MPU9250_REG_ACCEL_XOUT_HL + i, &vals[i]);
     }
 
     accel_val->raw_x = ((uint16_t)vals[0] << 8) | vals[1];
@@ -264,7 +262,7 @@ bool MPU9250_drv_read_accel(MPU9250_accel_val *accel_val)
 /*
  * Read chip temperature.
  */
-bool MPU9250_drv_read_temperature(MPU9250_temperature_val *temperature_val)
+bool MPU9250_drv_read_temperature(struct mpu9250_dev *dev, MPU9250_temperature_val *temperature_val)
 {
     uint8_t val[2];
 
@@ -276,8 +274,8 @@ bool MPU9250_drv_read_temperature(MPU9250_temperature_val *temperature_val)
         return false;
     }
 
-    ////mpu9250_drv_read_byte(MPU9250_REG_TEMP_HL, &val[0]);
-    //mpu9250_drv_read_byte(MPU9250_REG_TEMP_HL + 1, &val[1]);
+    mpu9250_drv_read_byte(dev, MPU9250_REG_TEMP_HL, &val[0]);
+    mpu9250_drv_read_byte(dev, MPU9250_REG_TEMP_HL + 1, &val[1]);
 
     temperature_val->raw = ((uint16_t)val[0] << 8) | val[1];
 

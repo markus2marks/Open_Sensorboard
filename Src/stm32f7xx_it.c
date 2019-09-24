@@ -22,6 +22,7 @@
 #include "main.h"
 #include "stm32f7xx_it.h"
 #include "cmsis_os.h"
+#include "gyrotask.h"
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 /* USER CODE END Includes */
@@ -217,6 +218,16 @@ void OTG_FS_IRQHandler(void)
 }
 
 /* USER CODE BEGIN 1 */
+void EXTI4_IRQHandler (void)
+{
+	struct hal_s* hal;
+	if (__HAL_GPIO_EXTI_GET_IT (GPIO_PIN_4))
+	{
+		hal = getMpuHal();
+		hal->new_gyro = 1;
 
+		__HAL_GPIO_EXTI_CLEAR_IT (GPIO_PIN_4);
+	}
+}
 /* USER CODE END 1 */
 /************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/
