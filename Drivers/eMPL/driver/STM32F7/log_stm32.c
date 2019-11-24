@@ -29,7 +29,7 @@
 #include "main.h"
 #include "log.h"
 #include "stm32f7xx_hal.h"
-
+#include "usbd_cdc_if.h"
 
 
 #define BUF_SIZE        (256)
@@ -100,8 +100,10 @@ int _MLPrintLog (int priority, const char* tag, const char* fmt, ...)
 		memset(out+3, 0, 18);
 		memcpy(out+3, buf+ii, this_length);
 		
-		USBD_CDC_SetTxBuffer (hUsbDeviceFS, (uint8_t *)buf, PACKET_LENGTH);
-		USBD_CDC_TransmitPacket (hUsbDeviceFS);
+		CDC_Transmit_FS((uint8_t *)out, PACKET_LENGTH);
+
+		//USBD_CDC_SetTxBuffer (hUsbDeviceFS, (uint8_t *)buf, PACKET_LENGTH);
+		//USBD_CDC_TransmitPacket (hUsbDeviceFS);
 	}
 					
 	va_end(args);
@@ -137,8 +139,9 @@ void eMPL_send_quat(long *quat)
 	out[16] = (char)(quat[3] >> 8);
 	out[17] = (char)quat[3];
 	
-	USBD_CDC_SetTxBuffer (hUsbDeviceFS, (uint8_t *)out, 18);
-	USBD_CDC_TransmitPacket (hUsbDeviceFS);
+	CDC_Transmit_FS((uint8_t *)out, PACKET_LENGTH);
+	//USBD_CDC_SetTxBuffer (hUsbDeviceFS, (uint8_t *)out, 18);
+	//USBD_CDC_TransmitPacket (hUsbDeviceFS);
 }
 
 void eMPL_send_data(unsigned char type, long *data)
@@ -211,9 +214,9 @@ void eMPL_send_data(unsigned char type, long *data)
 	default:
 		return;
 	}
-	
-	USBD_CDC_SetTxBuffer (hUsbDeviceFS, (uint8_t *)out, PACKET_LENGTH);
-	USBD_CDC_TransmitPacket (hUsbDeviceFS);
+	CDC_Transmit_FS((uint8_t *)out, PACKET_LENGTH);
+	//USBD_CDC_SetTxBuffer (hUsbDeviceFS, (uint8_t *)out, PACKET_LENGTH);
+	//USBD_CDC_TransmitPacket (hUsbDeviceFS);
 }
 
 /**
