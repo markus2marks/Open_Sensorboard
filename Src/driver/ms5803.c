@@ -123,7 +123,7 @@ void ms5803_write_command(struct ms5803_dev *dev, uint8_t command)
 {
 	HAL_GPIO_WritePin(dev->gpio_port, dev->pin_cs, GPIO_PIN_RESET);
 	HAL_SPI_Transmit(dev->hspi,(uint8_t*) &command, 1, 100);
-	HAL_GPIO_WritePin(dev->gpio_port, dev->pin_cs, GPIO_PIN_SET);
+
 }
 
 /*

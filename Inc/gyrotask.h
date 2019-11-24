@@ -36,7 +36,7 @@
 #define MOTION          (0)
 #define NO_MOTION       (1)
 
-#define DEFAULT_MPU_HZ  (200)
+#define DEFAULT_MPU_HZ  (100)
 
 #define FLASH_SIZE      (512)
 #define FLASH_MEM_START ((void*)0x1800)
@@ -67,7 +67,8 @@ struct hal_s {
     unsigned short dmp_features;
     struct rx_s rx;
 };
-
+static void tap_cb(unsigned char direction, unsigned char count);
+static void android_orient_cb(unsigned char orientation);
 void gyroTask( void *pvParameters );
 struct hal_s* getMpuHal(void);
 

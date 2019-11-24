@@ -84,6 +84,13 @@ struct mpu9250_dev
 };
 
 
+struct mpu6050_dev
+{
+	I2C_HandleTypeDef *hi2c;
+	GPIO_TypeDef  *gpio_port;
+	uint16_t pin_cs;
+};
+
 /*
  * MPU-9250
  */

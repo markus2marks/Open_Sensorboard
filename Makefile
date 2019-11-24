@@ -257,7 +257,7 @@ Src/usbd_cdc_if.c
 
 # ASM sources
 ASM_SOURCES =  \
-startup_stm32f745xx.s
+startup_stm32f746xx.s
 
 
 #######################################
@@ -287,7 +287,7 @@ BIN = $(CP) -O binary -S
 CPU = -mcpu=cortex-m7
 
 # fpu
-FPU = -mfpu=fpv5-sp-d16
+FPU = -mfpu=fpv4-sp-d16
 
 # float-abi
 FLOAT-ABI = -mfloat-abi=hard
@@ -303,13 +303,13 @@ AS_DEFS =
 C_DEFS =  \
 -DMBEDTLS_CONFIG_FILE=\"mbedtls_config.h\" \
 -DUSE_HAL_DRIVER \
--DSTM32F745xx \
+-DSTM32F746xx \
 -DEMPL \
 -DEMPL_TARGET_STM32F4 \
--DMPU9250
+-DMPU9250 \
+-DMPU6500
 -DMBEDTLS_CONFIG_FILE=\"mbedtls_config.h\" \
 -DUSE_HAL_DRIVER \
--DSTM32F745xx \
 -DEMPL \
 -DUSE_DMP \
 -DMPL_LOG_NDEBUG=1 \
@@ -369,7 +369,7 @@ endif
 # LDFLAGS
 #######################################
 # link script
-LDSCRIPT = STM32F745ZETx_FLASH.ld
+LDSCRIPT = STM32F746ZGTx_FLASH.ld
 
 # libraries
 LIBS = -lc -lm -lnosys 

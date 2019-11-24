@@ -18,6 +18,8 @@ struct ms4525do_dev
 	uint16_t pin_cs;
 };
 
-void ms4525do_read_data(struct ms4525do_dev *dev,  uint8_t *data, uint8_t length);
-
+void ms4525do_read_data(struct ms4525do_dev *dev);
+uint16_t ms4525do_get_temperature(void);
+int16_t ms4525do_get_pressure(void);
+uint16_t ms4525do_get_status(void);
 #endif /* MS4525DO_H_ */

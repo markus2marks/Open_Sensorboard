@@ -5,6 +5,7 @@
 
 static unsigned char stm32f4xx_empl_i2c_wb[MAX_WRITE_SIZE];
 static struct mpu9250_dev *dev;
+static struct mpu6050_dev *dev_i2c;
 
 void stm32f7xx_empl_drv_init(struct mpu9250_dev *init_dev)
 {
@@ -12,30 +13,47 @@ void stm32f7xx_empl_drv_init(struct mpu9250_dev *init_dev)
 }
 
 
-int stm32f4xx_i2c_write (unsigned char slave_addr,
+void stm32f7xx_empl_drv_init_i2c(struct mpu6050_dev *init_dev)
+{
+	dev_i2c = init_dev;
+}
+
+int stm32f7xx_i2c_write (unsigned char slave_addr,
                          unsigned char reg_addr, 
                          unsigned char length, 
                          unsigned char const *data)
 {	
+	if (length + 1 > MAX_WRITE_SIZE)
+	{
+			return -1;
+	}
+	stm32f4xx_empl_i2c_wb[0] = reg_addr;
+	memcpy (stm32f4xx_empl_i2c_wb + 1, data, length);
 
+	while (__HAL_I2C_GET_FLAG(dev_i2c->hi2c, I2C_FLAG_BUSY) == SET) ;
+
+	HAL_I2C_Master_Transmit (dev_i2c->hi2c, slave_addr << 1, stm32f4xx_empl_i2c_wb, length + 1, 1000);
 	
 	return 0;
 }
 
 													
-int stm32f4xx_i2c_read  (unsigned char slave_addr,
+int stm32f7xx_i2c_read  (unsigned char slave_addr,
                          unsigned char reg_addr, 
                          unsigned char length, 
                          unsigned char *data)
 {
+	while (__HAL_I2C_GET_FLAG(dev_i2c->hi2c, I2C_FLAG_BUSY) == SET) ;
 
+	HAL_I2C_Master_Transmit (dev_i2c->hi2c, slave_addr << 1, &reg_addr, 1, 1000);
+	HAL_I2C_Master_Receive  (dev_i2c->hi2c, slave_addr << 1, data, length, 1000);
 	
 	return 0;
 }
 
 
-int stm32f4xx_spi_write (unsigned char reg_addr, 
-                         unsigned char length, 
+int stm32f7xx_spi_write (unsigned char reg_addr,
+                         unsigned char length,
                          unsigned char const *data)
 {	
 	if (length + 1 > MAX_WRITE_SIZE)
@@ -52,7 +70,7 @@ int stm32f4xx_spi_write (unsigned char reg_addr,
 	return 0;
 }
 
-int stm32f4xx_spi_read  (unsigned char reg_addr, 
+int stm32f7xx_spi_read  (unsigned char reg_addr,
                          unsigned char length, 
                          unsigned char *data)
 {
