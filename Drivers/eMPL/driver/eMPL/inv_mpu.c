@@ -41,10 +41,8 @@
 #include "stm32f7xx_empl_drv.h"
 #include "log.h"
    
-#define spi_write   stm32f4xx_spi_write
-#define spi_read    stm32f4xx_spi_read
-#define spi_write   stm32f4xx_spi_write
-#define spi_read    stm32f4xx_spi_read
+#define spi_write   stm32f7xx_spi_write
+#define spi_read    stm32f7xx_spi_read
 #define delay_ms    stm32f4xx_delay_ms
 #define get_ms      stm32f4xx_get_ms
 #define log_i       MPL_LOGI
@@ -696,7 +694,7 @@ int mpu_read_reg(unsigned char reg, unsigned char *data)
         return -1;
     if (reg >= st.hw->num_reg)
         return -1;
-    return spi_read(st.hw->addr, reg, 1, data);
+    return spi_read( reg, 1, data);
 }
 
 /**
@@ -716,8 +714,15 @@ int mpu_init(struct int_param_s *int_param)
 {
     unsigned char data[6];
 
-		
-		
+    if(spi_read(st.reg->who_am_i, 1, data))
+	{
+    	return -1;
+	}
+//check if the sensor is there
+    if(data[0] != MPU_9250_WHO_AM_I)
+    {
+    	return -1;
+    }
 	
     /* Reset device. */
     data[0] = BIT_RESET;
@@ -729,6 +734,8 @@ int mpu_init(struct int_param_s *int_param)
     data[0] = 0x00;
 	if (spi_write(st.reg->pwr_mgmt_1, 1, data))
 		return -1;
+
+	spi_read(st.reg->pwr_mgmt_1,1,data);
 
 	data[0] = 0x18;
 	data[1] = 0x19;
@@ -749,7 +756,7 @@ int mpu_init(struct int_param_s *int_param)
      * first 3kB are needed by the DMP, we'll use the last 1kB for the FIFO.
      */
     data[0] = BIT_FIFO_SIZE_1024 | 0x8;
-    if (spi_write(st.hw->addr, st.reg->accel_cfg2, 1, data))
+    if (spi_write( st.reg->accel_cfg2, 1, data))
         return -1;
 #endif
 
@@ -832,7 +839,7 @@ int mpu_lp_accel_mode(unsigned short rate)
         mpu_set_int_latched(0);
         tmp[0] = 0;
         tmp[1] = BIT_STBY_XYZG;
-        if (spi_write(st.hw->addr, st.reg->pwr_mgmt_1, 2, tmp))
+        if (spi_write( st.reg->pwr_mgmt_1, 2, tmp))
             return -1;
         st.chip_cfg.lp_accel_mode = 0;
         return 0;
@@ -861,7 +868,7 @@ int mpu_lp_accel_mode(unsigned short rate)
         mpu_set_lpf(20);
     }
     tmp[1] = (tmp[1] << 6) | BIT_STBY_XYZG;
-    if (spi_write(st.hw->addr, st.reg->pwr_mgmt_1, 2, tmp))
+    if (spi_write( st.reg->pwr_mgmt_1, 2, tmp))
         return -1;
 #elif defined MPU6500
     /* Set wake frequency. */
@@ -885,10 +892,10 @@ int mpu_lp_accel_mode(unsigned short rate)
         tmp[0] = INV_LPA_320HZ;
     else
         tmp[0] = INV_LPA_640HZ;
-    if (spi_write(st.hw->addr, st.reg->lp_accel_odr, 1, tmp))
+    if (spi_write( st.reg->lp_accel_odr, 1, tmp))
         return -1;
     tmp[0] = BIT_LPA_CYCLE;
-    if (spi_write(st.hw->addr, st.reg->pwr_mgmt_1, 1, tmp))
+    if (spi_write( st.reg->pwr_mgmt_1, 1, tmp))
         return -1;
 #endif
     st.chip_cfg.sensors = INV_XYZ_ACCEL;
@@ -912,7 +919,7 @@ int mpu_get_gyro_reg(short *data, unsigned long *timestamp)
     if (!(st.chip_cfg.sensors & INV_XYZ_GYRO))
         return -1;
 
-    if (spi_read(st.hw->addr, st.reg->raw_gyro, 6, tmp))
+    if (spi_read( st.reg->raw_gyro, 6, tmp))
         return -1;
     data[0] = (tmp[0] << 8) | tmp[1];
     data[1] = (tmp[2] << 8) | tmp[3];
@@ -935,7 +942,7 @@ int mpu_get_accel_reg(short *data, unsigned long *timestamp)
     if (!(st.chip_cfg.sensors & INV_XYZ_ACCEL))
         return -1;
 
-    if (spi_read(st.hw->addr, st.reg->raw_accel, 6, tmp))
+    if (spi_read( st.reg->raw_accel, 6, tmp))
         return -1;
     data[0] = (tmp[0] << 8) | tmp[1];
     data[1] = (tmp[2] << 8) | tmp[3];
@@ -959,7 +966,7 @@ int mpu_get_temperature(long *data, unsigned long *timestamp)
     if (!(st.chip_cfg.sensors))
         return -1;
 
-    if (spi_read(st.hw->addr, st.reg->temp, 2, tmp))
+    if (spi_read( st.reg->temp, 2, tmp))
         return -1;
     raw = (tmp[0] << 8) | tmp[1];
     if (timestamp)
@@ -979,11 +986,11 @@ int mpu_get_temperature(long *data, unsigned long *timestamp)
  */
 int mpu_read_6500_accel_bias(long *accel_bias) {
 	unsigned char data[6];
-	if (spi_read(st.hw->addr, 0x77, 2, &data[0]))
+	if (spi_read( 0x77, 2, &data[0]))
 		return -1;
-	if (spi_read(st.hw->addr, 0x7A, 2, &data[2]))
+	if (spi_read( 0x7A, 2, &data[2]))
 		return -1;
-	if (spi_read(st.hw->addr, 0x7D, 2, &data[4]))
+	if (spi_read( 0x7D, 2, &data[4]))
 		return -1;
 	accel_bias[0] = ((long)data[0]<<8) | data[1];
 	accel_bias[1] = ((long)data[2]<<8) | data[3];
@@ -1001,11 +1008,11 @@ int mpu_read_6500_accel_bias(long *accel_bias) {
  */
 int mpu_read_6050_accel_bias(long *accel_bias) {
 	unsigned char data[6];
-	if (spi_read(st.hw->addr, 0x06, 2, &data[0]))
+	if (spi_read( 0x06, 2, &data[0]))
 		return -1;
-	if (spi_read(st.hw->addr, 0x08, 2, &data[2]))
+	if (spi_read( 0x08, 2, &data[2]))
 		return -1;
-	if (spi_read(st.hw->addr, 0x0A, 2, &data[4]))
+	if (spi_read( 0x0A, 2, &data[4]))
 		return -1;
 	accel_bias[0] = ((long)data[0]<<8) | data[1];
 	accel_bias[1] = ((long)data[2]<<8) | data[3];
@@ -1015,11 +1022,11 @@ int mpu_read_6050_accel_bias(long *accel_bias) {
 
 int mpu_read_6500_gyro_bias(long *gyro_bias) {
 	unsigned char data[6];
-	if (spi_read(st.hw->addr, 0x13, 2, &data[0]))
+	if (spi_read( 0x13, 2, &data[0]))
 		return -1;
-	if (spi_read(st.hw->addr, 0x15, 2, &data[2]))
+	if (spi_read( 0x15, 2, &data[2]))
 		return -1;
-	if (spi_read(st.hw->addr, 0x17, 2, &data[4]))
+	if (spi_read( 0x17, 2, &data[4]))
 		return -1;
 	gyro_bias[0] = ((long)data[0]<<8) | data[1];
 	gyro_bias[1] = ((long)data[2]<<8) | data[3];
@@ -1048,11 +1055,11 @@ int mpu_set_gyro_bias_reg(long *gyro_bias)
     data[3] = (gyro_bias[1]) & 0xff;
     data[4] = (gyro_bias[2] >> 8) & 0xff;
     data[5] = (gyro_bias[2]) & 0xff;
-    if (spi_write(st.hw->addr, 0x13, 2, &data[0]))
+    if (spi_write( 0x13, 2, &data[0]))
         return -1;
-    if (spi_write(st.hw->addr, 0x15, 2, &data[2]))
+    if (spi_write( 0x15, 2, &data[2]))
         return -1;
-    if (spi_write(st.hw->addr, 0x17, 2, &data[4]))
+    if (spi_write( 0x17, 2, &data[4]))
         return -1;
     return 0;
 }
@@ -1083,11 +1090,11 @@ int mpu_set_accel_bias_6050_reg(const long *accel_bias) {
     data[4] = (accel_reg_bias[2] >> 8) & 0xff;
     data[5] = (accel_reg_bias[2]) & 0xff;
 
-    if (spi_write(st.hw->addr, 0x06, 2, &data[0]))
+    if (spi_write( 0x06, 2, &data[0]))
         return -1;
-    if (spi_write(st.hw->addr, 0x08, 2, &data[2]))
+    if (spi_write( 0x08, 2, &data[2]))
         return -1;
-    if (spi_write(st.hw->addr, 0x0A, 2, &data[4]))
+    if (spi_write( 0x0A, 2, &data[4]))
         return -1;
 
     return 0;
@@ -1122,11 +1129,11 @@ int mpu_set_accel_bias_6500_reg(const long *accel_bias) {
     data[4] = (accel_reg_bias[2] >> 8) & 0xff;
     data[5] = (accel_reg_bias[2]) & 0xff;
 
-    if (spi_write(st.hw->addr, 0x77, 2, &data[0]))
+    if (spi_write( 0x77, 2, &data[0]))
         return -1;
-    if (spi_write(st.hw->addr, 0x7A, 2, &data[2]))
+    if (spi_write( 0x7A, 2, &data[2]))
         return -1;
-    if (spi_write(st.hw->addr, 0x7D, 2, &data[4]))
+    if (spi_write( 0x7D, 2, &data[4]))
         return -1;
 
     return 0;
@@ -1489,7 +1496,7 @@ int mpu_set_compass_sample_rate(unsigned short rate)
         return -1;
 
     div = st.chip_cfg.sample_rate / rate - 1;
-    if (spi_write(st.hw->addr, st.reg->s4_ctrl, 1, &div))
+    if (spi_write( st.reg->s4_ctrl, 1, &div))
         return -1;
     st.chip_cfg.compass_sample_rate = st.chip_cfg.sample_rate / (div + 1);
     return 0;
@@ -2093,7 +2100,7 @@ static int get_st_biases(long *gyro, long *accel, unsigned char hw_test)
 
     data[0] = 0x01;
     data[1] = 0;
-    if (spi_write(st.hw->addr, st.reg->pwr_mgmt_1, 2, data))
+    if (spi_write( st.reg->pwr_mgmt_1, 2, data))
         return -1;
     delay_ms(200);
     data[0] = 0;
@@ -2146,7 +2153,7 @@ static int get_st_biases(long *gyro, long *accel, unsigned char hw_test)
     if (spi_write(st.reg->fifo_en, 1, data))
         return -1;
 
-    if (spi_read(st.hw->addr, st.reg->fifo_count_h, 2, data))
+    if (spi_read( st.reg->fifo_count_h, 2, data))
         return -1;
 
     fifo_count = (data[0] << 8) | data[1];
@@ -2434,42 +2441,42 @@ static int get_st_6500_biases(long *gyro, long *accel, unsigned char hw_test, in
 
     data[0] = 0x01;
     data[1] = 0;
-    if (spi_write(st.hw->addr, st.reg->pwr_mgmt_1, 2, data))
+    if (spi_write( st.reg->pwr_mgmt_1, 2, data))
         return -1;
     delay_ms(200);
     data[0] = 0;
-    if (spi_write(st.hw->addr, st.reg->int_enable, 1, data))
+    if (spi_write( st.reg->int_enable, 1, data))
         return -1;
-    if (spi_write(st.hw->addr, st.reg->fifo_en, 1, data))
+    if (spi_write( st.reg->fifo_en, 1, data))
         return -1;
-    if (spi_write(st.hw->addr, st.reg->pwr_mgmt_1, 1, data))
+    if (spi_write( st.reg->pwr_mgmt_1, 1, data))
         return -1;
-    if (spi_write(st.hw->addr, st.reg->i2c_mst, 1, data))
+    if (spi_write( st.reg->i2c_mst, 1, data))
         return -1;
-    if (spi_write(st.hw->addr, st.reg->user_ctrl, 1, data))
+    if (spi_write( st.reg->user_ctrl, 1, data))
         return -1;
     data[0] = BIT_FIFO_RST | BIT_DMP_RST;
-    if (spi_write(st.hw->addr, st.reg->user_ctrl, 1, data))
+    if (spi_write(st.reg->user_ctrl, 1, data))
         return -1;
     delay_ms(15);
     data[0] = st.test->reg_lpf;
-    if (spi_write(st.hw->addr, st.reg->lpf, 1, data))
+    if (spi_write(st.reg->lpf, 1, data))
         return -1;
     data[0] = st.test->reg_rate_div;
-    if (spi_write(st.hw->addr, st.reg->rate_div, 1, data))
+    if (spi_write(st.reg->rate_div, 1, data))
         return -1;
     if (hw_test)
         data[0] = st.test->reg_gyro_fsr | 0xE0;
     else
         data[0] = st.test->reg_gyro_fsr;
-    if (spi_write(st.hw->addr, st.reg->gyro_cfg, 1, data))
+    if (spi_write(st.reg->gyro_cfg, 1, data))
         return -1;
 
     if (hw_test)
         data[0] = st.test->reg_accel_fsr | 0xE0;
     else
         data[0] = test.reg_accel_fsr;
-    if (spi_write(st.hw->addr, st.reg->accel_cfg, 1, data))
+    if (spi_write(st.reg->accel_cfg, 1, data))
         return -1;
 
     delay_ms(test.wait_ms);  //wait 200ms for sensors to stabilize
@@ -2479,7 +2486,7 @@ static int get_st_6500_biases(long *gyro, long *accel, unsigned char hw_test, in
     if (spi_write(st.reg->user_ctrl, 1, data))
         return -1;
     data[0] = INV_XYZ_GYRO | INV_XYZ_ACCEL;
-    if (spi_write(st.hw->addr, st.reg->fifo_en, 1, data))
+    if (spi_write(st.reg->fifo_en, 1, data))
         return -1;
 
     //initialize the bias return values
@@ -2492,7 +2499,7 @@ static int get_st_6500_biases(long *gyro, long *accel, unsigned char hw_test, in
     //start reading samples
     while (s < test.packet_thresh) {
     	delay_ms(test.sample_wait_ms); //wait 10ms to fill FIFO
-		if (spi_read(st.hw->addr, st.reg->fifo_count_h, 2, data))
+		if (spi_read(st.reg->fifo_count_h, 2, data))
 			return -1;
 		fifo_count = (data[0] << 8) | data[1];
 		packet_count = fifo_count / MAX_PACKET_LENGTH;
@@ -2501,7 +2508,7 @@ static int get_st_6500_biases(long *gyro, long *accel, unsigned char hw_test, in
 		read_size = packet_count * MAX_PACKET_LENGTH;
 
 		//burst read from FIFO
-		if (spi_read(st.hw->addr, st.reg->fifo_r_w, read_size, data))
+		if (spi_read(st.reg->fifo_r_w, read_size, data))
 						return -1;
 		ind = 0;
 		for (ii = 0; ii < packet_count; ii++) {
@@ -2528,7 +2535,7 @@ static int get_st_6500_biases(long *gyro, long *accel, unsigned char hw_test, in
 
     //stop FIFO
     data[0] = 0;
-    if (spi_write(st.hw->addr, st.reg->fifo_en, 1, data))
+    if (spi_write(st.reg->fifo_en, 1, data))
         return -1;
 
     gyro[0] = (long)(((long long)gyro[0]<<16) / test.gyro_sens / s);
@@ -2995,53 +3002,53 @@ static int setup_compass(void)
 
     /* Set up master mode, master clock, and ES bit. */
     data[0] = 0x40;
-    if (spi_write(st.hw->addr, st.reg->i2c_mst, 1, data))
+    if (spi_write( st.reg->i2c_mst, 1, data))
         return -1;
 
     /* Slave 0 reads from AKM data registers. */
     data[0] = BIT_spi_read | st.chip_cfg.compass_addr;
-    if (spi_write(st.hw->addr, st.reg->s0_addr, 1, data))
+    if (spi_write( st.reg->s0_addr, 1, data))
         return -1;
 
     /* Compass reads start at this register. */
     data[0] = AKM_REG_ST1;
-    if (spi_write(st.hw->addr, st.reg->s0_reg, 1, data))
+    if (spi_write( st.reg->s0_reg, 1, data))
         return -1;
 
     /* Enable slave 0, 8-byte reads. */
     data[0] = BIT_SLAVE_EN | 8;
-    if (spi_write(st.hw->addr, st.reg->s0_ctrl, 1, data))
+    if (spi_write( st.reg->s0_ctrl, 1, data))
         return -1;
 
     /* Slave 1 changes AKM measurement mode. */
     data[0] = st.chip_cfg.compass_addr;
-    if (spi_write(st.hw->addr, st.reg->s1_addr, 1, data))
+    if (spi_write( st.reg->s1_addr, 1, data))
         return -1;
 
     /* AKM measurement mode register. */
     data[0] = AKM_REG_CNTL;
-    if (spi_write(st.hw->addr, st.reg->s1_reg, 1, data))
+    if (spi_write( st.reg->s1_reg, 1, data))
         return -1;
 
     /* Enable slave 1, 1-byte writes. */
     data[0] = BIT_SLAVE_EN | 1;
-    if (spi_write(st.hw->addr, st.reg->s1_ctrl, 1, data))
+    if (spi_write( st.reg->s1_ctrl, 1, data))
         return -1;
 
     /* Set slave 1 data. */
     data[0] = AKM_SINGLE_MEASUREMENT;
-    if (spi_write(st.hw->addr, st.reg->s1_do, 1, data))
+    if (spi_write( st.reg->s1_do, 1, data))
         return -1;
 
     /* Trigger slave 0 and slave 1 actions at each sample. */
     data[0] = 0x03;
-    if (spi_write(st.hw->addr, st.reg->i2c_delay_ctrl, 1, data))
+    if (spi_write( st.reg->i2c_delay_ctrl, 1, data))
         return -1;
 
 #ifdef MPU9150
     /* For the MPU9150, the auxiliary I2C bus needs to be set to VDD. */
     data[0] = BIT_I2C_MST_VDDIO;
-    if (spi_write(st.hw->addr, st.reg->yg_offs_tc, 1, data))
+    if (spi_write( st.reg->yg_offs_tc, 1, data))
         return -1;
 #endif
 
@@ -3211,12 +3218,12 @@ int mpu_lp_motion_interrupt(unsigned short thresh, unsigned char time,
         data[0] = 0;
         data[1] = 0;
         data[2] = BIT_STBY_XYZG;
-        if (spi_write(st.hw->addr, st.reg->user_ctrl, 3, data))
+        if (spi_write(st.reg->user_ctrl, 3, data))
             goto lp_int_restore;
 
         /* Set motion threshold. */
         data[0] = thresh_hw;
-        if (spi_write(st.hw->addr, st.reg->motion_thr, 1, data))
+        if (spi_write(st.reg->motion_thr, 1, data))
             goto lp_int_restore;
 
         /* Set wake frequency. */
@@ -3240,22 +3247,22 @@ int mpu_lp_motion_interrupt(unsigned short thresh, unsigned char time,
             data[0] = INV_LPA_320HZ;
         else
             data[0] = INV_LPA_640HZ;
-        if (spi_write(st.hw->addr, st.reg->lp_accel_odr, 1, data))
+        if (spi_write(st.reg->lp_accel_odr, 1, data))
             goto lp_int_restore;
 
         /* Enable motion interrupt (MPU6500 version). */
         data[0] = BITS_WOM_EN;
-        if (spi_write(st.hw->addr, st.reg->accel_intel, 1, data))
+        if (spi_write(st.reg->accel_intel, 1, data))
             goto lp_int_restore;
 
         /* Enable cycle mode. */
         data[0] = BIT_LPA_CYCLE;
-        if (spi_write(st.hw->addr, st.reg->pwr_mgmt_1, 1, data))
+        if (spi_write(st.reg->pwr_mgmt_1, 1, data))
             goto lp_int_restore;
 
         /* Enable interrupt. */
         data[0] = BIT_MOT_INT_EN;
-        if (spi_write(st.hw->addr, st.reg->int_enable, 1, data))
+        if (spi_write(st.reg->int_enable, 1, data))
             goto lp_int_restore;
 
         st.chip_cfg.int_motion_only = 1;
